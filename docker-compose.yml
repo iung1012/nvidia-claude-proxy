@@ -1,0 +1,26 @@
+services:
+  proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: claude-nvidia-proxy-python
+    container_name: claude-nvidia-proxy
+    restart: unless-stopped
+    ports:
+      - "8089:8089"
+    environment:
+      # Required
+      - UPSTREAM_URL=${UPSTREAM_URL:-https://integrate.api.nvidia.com/v1/chat/completions}
+      - PROVIDER_API_KEY=${PROVIDER_API_KEY}
+      # Optional
+      - ADDR=${ADDR:-0.0.0.0:8089}
+      - SERVER_API_KEY=${SERVER_API_KEY:-}
+      - UPSTREAM_TIMEOUT_SECONDS=${UPSTREAM_TIMEOUT_SECONDS:-300}
+      - LOG_BODY_MAX_CHARS=${LOG_BODY_MAX_CHARS:-4096}
+      - LOG_STREAM_TEXT_PREVIEW_CHARS=${LOG_STREAM_TEXT_PREVIEW_CHARS:-256}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8089/api/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
