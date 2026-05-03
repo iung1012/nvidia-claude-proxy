@@ -98,7 +98,12 @@ Desktop.ini
 renders/
 .waveform-cache/
 narration.wav
+narration-full.wav
 design.md
+design-full.md
 index.html
-.claude/skills*
+index-full-backup.html
+hyperframes.json
+hyperframes-full.json
+.claude/skills/
 compositions/
