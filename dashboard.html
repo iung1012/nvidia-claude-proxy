@@ -1,350 +1,828 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Claude-NVIDIA Proxy — Dashboard</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #0a0b0f; --surface: #111318; --surface2: #181b22; --surface3: #1e2230;
-    --border: #252a36; --accent: #7c6ef7; --accent2: #5eead4; --accent3: #f97316;
-    --ok: #22c55e; --warn: #eab308; --err: #ef4444; --info: #60a5fa;
-    --text: #e2e8f0; --muted: #64748b; --dim: #334155;
-    --font: 'Inter', sans-serif; --mono: 'JetBrains Mono', monospace;
-    --radius: 12px; --radius-sm: 8px;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NVIDIA - Claude Code Proxy — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0b0f;
+      --surface: #111318;
+      --surface2: #181b22;
+      --surface3: #1e2230;
+      --border: #252a36;
+      --accent: #7c6ef7;
+      --accent2: #5eead4;
+      --accent3: #f97316;
+      --ok: #22c55e;
+      --warn: #eab308;
+      --err: #ef4444;
+      --info: #60a5fa;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --dim: #334155;
+      --font: 'Inter', sans-serif;
+      --mono: 'JetBrains Mono', monospace;
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
 
-  /* Layout */
-  .layout { display: grid; grid-template-rows: 56px 1fr; height: 100vh; }
-  .navbar { display: flex; align-items: center; gap: 12px; padding: 0 24px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
-  .navbar .logo { font-size: 15px; font-weight: 700; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-  .navbar .subtitle { color: var(--muted); font-size: 12px; }
-  .badge { padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-  .badge-ok  { background: #16532220; color: var(--ok); border: 1px solid #16532240; }
-  .badge-err { background: #7f1d1d20; color: var(--err); border: 1px solid #7f1d1d40; }
-  .navbar .spacer { flex: 1; }
-  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 8px var(--ok); animation: pulse 2s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-  .main { display: grid; grid-template-columns: 1fr 380px; grid-template-rows: auto 1fr; gap: 16px; padding: 16px; overflow: hidden; height: 100%; }
+    html,
+    body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 14px;
+    }
 
-  /* Stat cards */
-  .stats { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; }
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; transition: border-color .2s; }
-  .card:hover { border-color: var(--accent); }
-  .card .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
-  .card .value { font-size: 26px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
-  .card .sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
-  .v-accent  { color: var(--accent); }
-  .v-ok      { color: var(--ok); }
-  .v-err     { color: var(--err); }
-  .v-warn    { color: var(--warn); }
-  .v-teal    { color: var(--accent2); }
-  .v-orange  { color: var(--accent3); }
-  .v-info    { color: var(--info); }
+    /* Layout */
+    .layout {
+      display: grid;
+      grid-template-rows: 56px 1fr;
+      height: 100vh;
+    }
 
-  /* Panels */
-  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); display: flex; flex-direction: column; overflow: hidden; }
-  .panel-header { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; }
-  .panel-header .dot { width: 6px; height: 6px; border-radius: 50%; }
-  .panel-body { flex: 1; overflow-y: auto; }
-  .panel-body::-webkit-scrollbar { width: 4px; }
-  .panel-body::-webkit-scrollbar-track { background: transparent; }
-  .panel-body::-webkit-scrollbar-thumb { background: var(--dim); border-radius: 2px; }
+    .navbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 24px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
 
-  /* Request table */
-  .req-table { width: 100%; border-collapse: collapse; }
-  .req-table th { padding: 8px 14px; text-align: left; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface); }
-  .req-table td { padding: 9px 14px; border-bottom: 1px solid var(--border)18; font-size: 12px; white-space: nowrap; }
-  .req-table tr:hover td { background: var(--surface2); }
-  .req-table tr.new-row { animation: fadeIn .4s ease; }
-  @keyframes fadeIn { from { background: #7c6ef720; } to { background: transparent; } }
-  .model-tag { background: var(--surface3); border-radius: 4px; padding: 2px 6px; font-family: var(--mono); font-size: 11px; color: var(--accent2); }
-  .dur { font-family: var(--mono); font-size: 11px; color: var(--muted); }
-  .st { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-  .st-ok   { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
-  .st-err  { background: var(--err); box-shadow: 0 0 6px var(--err); }
-  .st-pend { background: var(--warn); animation: pulse 1s infinite; }
+    .navbar .logo {
+      font-size: 15px;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
 
-  /* Log feed */
-  .log-entry { padding: 7px 14px; border-bottom: 1px solid var(--border)10; font-family: var(--mono); font-size: 11px; line-height: 1.5; display: flex; gap: 8px; animation: slideIn .2s ease; }
-  @keyframes slideIn { from { opacity:0; transform: translateX(8px); } to { opacity:1; transform: none; } }
-  .log-ts { color: var(--dim); flex-shrink: 0; width: 54px; }
-  .log-lvl { flex-shrink: 0; width: 36px; font-weight: 600; }
-  .log-lvl-INFO  { color: var(--info); }
-  .log-lvl-ERROR { color: var(--err); }
-  .log-lvl-WARN  { color: var(--warn); }
-  .log-lvl-DEBUG { color: var(--muted); }
-  .log-msg { color: var(--text); overflow: hidden; text-overflow: ellipsis; }
-  .log-msg .req-id { color: var(--accent); }
+    .navbar .subtitle {
+      color: var(--muted);
+      font-size: 12px;
+    }
 
-  /* Model chart */
-  .model-chart { padding: 14px; display: flex; flex-direction: column; gap: 8px; }
-  .model-bar-row { display: flex; align-items: center; gap: 8px; }
-  .model-name { font-family: var(--mono); font-size: 11px; color: var(--muted); width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .model-bar-bg { flex: 1; height: 6px; background: var(--surface3); border-radius: 3px; overflow: hidden; }
-  .model-bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width .5s ease; }
-  .model-count { font-size: 11px; color: var(--muted); width: 28px; text-align: right; font-family: var(--mono); }
+    .badge {
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
 
-  /* Error list */
-  .error-item { padding: 10px 14px; border-bottom: 1px solid var(--border)18; }
-  .error-code { font-size: 12px; color: var(--err); font-family: var(--mono); font-weight: 600; }
-  .error-model { font-size: 11px; color: var(--muted); margin-top: 2px; }
-  .error-time { font-size: 10px; color: var(--dim); margin-top: 2px; }
+    .badge-ok {
+      background: #16532220;
+      color: var(--ok);
+      border: 1px solid #16532240;
+    }
 
-  /* Right sidebar tabs */
-  .sidebar { display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
-  .tab-bar { display: flex; background: var(--surface2); border-radius: var(--radius-sm); padding: 3px; gap: 2px; }
-  .tab { flex: 1; text-align: center; padding: 5px 0; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; color: var(--muted); transition: all .15s; border: none; background: none; }
-  .tab.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 4px #0006; }
-  .tab-content { display: none; flex: 1; overflow: hidden; min-height: 0; }
-  .tab-content.active { display: flex; flex-direction: column; overflow-y: auto; min-height: 0; }
+    .badge-err {
+      background: #7f1d1d20;
+      color: var(--err);
+      border: 1px solid #7f1d1d40;
+    }
 
-  /* Uptime pill */
-  .uptime { margin-left: auto; font-size: 11px; color: var(--muted); font-family: var(--mono); }
+    .navbar .spacer {
+      flex: 1;
+    }
 
-  /* Empty state */
-  .empty { padding: 32px; text-align: center; color: var(--muted); font-size: 12px; }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--ok);
+      box-shadow: 0 0 8px var(--ok);
+      animation: pulse 2s infinite;
+    }
 
-  /* Requests sidebar */
-  .req-panel-body { flex: 1; overflow-y: auto; min-height: 0; }
-  .req-panel-body::-webkit-scrollbar { width: 4px; }
-  .req-panel-body::-webkit-scrollbar-track { background: transparent; }
-  .req-panel-body::-webkit-scrollbar-thumb { background: var(--dim); border-radius: 2px; }
+    @keyframes pulse {
 
-  @media (max-width: 1100px) {
-    .stats { grid-template-columns: repeat(4, 1fr); }
-    .main { grid-template-columns: 1fr; }
-    .sidebar { grid-row: 3; }
-  }
-</style>
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: .4
+      }
+    }
+
+    .main {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      grid-template-rows: auto 1fr;
+      gap: 16px;
+      padding: 16px;
+      overflow: hidden;
+      height: 100%;
+    }
+
+    /* Stat cards */
+    .stats {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 12px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      transition: border-color .2s;
+    }
+
+    .card:hover {
+      border-color: var(--accent);
+    }
+
+    .card .label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      font-weight: 600;
+    }
+
+    .card .value {
+      font-size: 26px;
+      font-weight: 700;
+      margin-top: 4px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .card .sub {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .v-accent {
+      color: var(--accent);
+    }
+
+    .v-ok {
+      color: var(--ok);
+    }
+
+    .v-err {
+      color: var(--err);
+    }
+
+    .v-warn {
+      color: var(--warn);
+    }
+
+    .v-teal {
+      color: var(--accent2);
+    }
+
+    .v-orange {
+      color: var(--accent3);
+    }
+
+    .v-info {
+      color: var(--info);
+    }
+
+    /* Panels */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .panel-header .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .panel-body {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .panel-body::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .panel-body::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .panel-body::-webkit-scrollbar-thumb {
+      background: var(--dim);
+      border-radius: 2px;
+    }
+
+    /* Request table */
+    .req-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .req-table th {
+      padding: 8px 14px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: var(--surface);
+    }
+
+    .req-table td {
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--border)18;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .req-table tr:hover td {
+      background: var(--surface2);
+    }
+
+    .req-table tr.new-row {
+      animation: fadeIn .4s ease;
+    }
+
+    @keyframes fadeIn {
+      from {
+        background: #7c6ef720;
+      }
+
+      to {
+        background: transparent;
+      }
+    }
+
+    .model-tag {
+      background: var(--surface3);
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--accent2);
+    }
+
+    .dur {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .st {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .st-ok {
+      background: var(--ok);
+      box-shadow: 0 0 6px var(--ok);
+    }
+
+    .st-err {
+      background: var(--err);
+      box-shadow: 0 0 6px var(--err);
+    }
+
+    .st-pend {
+      background: var(--warn);
+      animation: pulse 1s infinite;
+    }
+
+    /* Log feed */
+    .log-entry {
+      padding: 7px 14px;
+      border-bottom: 1px solid var(--border)10;
+      font-family: var(--mono);
+      font-size: 11px;
+      line-height: 1.5;
+      display: flex;
+      gap: 8px;
+      animation: slideIn .2s ease;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    .log-ts {
+      color: var(--dim);
+      flex-shrink: 0;
+      width: 54px;
+    }
+
+    .log-lvl {
+      flex-shrink: 0;
+      width: 36px;
+      font-weight: 600;
+    }
+
+    .log-lvl-INFO {
+      color: var(--info);
+    }
+
+    .log-lvl-ERROR {
+      color: var(--err);
+    }
+
+    .log-lvl-WARN {
+      color: var(--warn);
+    }
+
+    .log-lvl-DEBUG {
+      color: var(--muted);
+    }
+
+    .log-msg {
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .log-msg .req-id {
+      color: var(--accent);
+    }
+
+    /* Model chart */
+    .model-chart {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .model-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .model-name {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      width: 130px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .model-bar-bg {
+      flex: 1;
+      height: 6px;
+      background: var(--surface3);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .model-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transition: width .5s ease;
+    }
+
+    .model-count {
+      font-size: 11px;
+      color: var(--muted);
+      width: 28px;
+      text-align: right;
+      font-family: var(--mono);
+    }
+
+    /* Error list */
+    .error-item {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border)18;
+    }
+
+    .error-code {
+      font-size: 12px;
+      color: var(--err);
+      font-family: var(--mono);
+      font-weight: 600;
+    }
+
+    .error-model {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .error-time {
+      font-size: 10px;
+      color: var(--dim);
+      margin-top: 2px;
+    }
+
+    /* Right sidebar tabs */
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow: hidden;
+    }
+
+    .tab-bar {
+      display: flex;
+      background: var(--surface2);
+      border-radius: var(--radius-sm);
+      padding: 3px;
+      gap: 2px;
+    }
+
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 5px 0;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      color: var(--muted);
+      transition: all .15s;
+      border: none;
+      background: none;
+    }
+
+    .tab.active {
+      background: var(--surface);
+      color: var(--text);
+      box-shadow: 0 1px 4px #0006;
+    }
+
+    .tab-content {
+      display: none;
+      flex: 1;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .tab-content.active {
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      min-height: 0;
+    }
+
+    /* Uptime pill */
+    .uptime {
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--muted);
+      font-family: var(--mono);
+    }
+
+    /* Empty state */
+    .empty {
+      padding: 32px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    /* Requests sidebar */
+    .req-panel-body {
+      flex: 1;
+      overflow-y: auto;
+      min-height: 0;
+    }
+
+    .req-panel-body::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .req-panel-body::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .req-panel-body::-webkit-scrollbar-thumb {
+      background: var(--dim);
+      border-radius: 2px;
+    }
+
+    @media (max-width: 1100px) {
+      .stats {
+        grid-template-columns: repeat(4, 1fr);
+      }
+
+      .main {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        grid-row: 3;
+      }
+    }
+  </style>
 </head>
+
 <body>
-<div class="layout">
-  <nav class="navbar">
-    <div class="logo">⬡ claude-nvidia-proxy</div>
-    <div class="subtitle">Python Edition</div>
-    <div class="spacer"></div>
-    <span id="uptime" class="uptime">—</span>
-    <div id="conn-badge" class="badge badge-ok">● live</div>
-    <div class="status-dot" id="status-dot"></div>
-  </nav>
+  <div class="layout">
+    <nav class="navbar">
+      <div class="logo">⬡ claude-nvidia-proxy</div>
+      <div class="subtitle">Python Edition</div>
+      <div class="spacer"></div>
+      <span id="uptime" class="uptime">—</span>
+      <div id="conn-badge" class="badge badge-ok">● live</div>
+      <div class="status-dot" id="status-dot"></div>
+    </nav>
 
-  <div class="main">
-    <!-- Stat cards -->
-    <div class="stats">
-      <div class="card"><div class="label">Total Requests</div><div class="value v-accent" id="s-total">0</div><div class="sub">since startup</div></div>
-      <div class="card"><div class="label">Errors</div><div class="value v-err" id="s-errors">0</div><div class="sub" id="s-err-rate">0.0%</div></div>
-      <div class="card"><div class="label">Active Streams</div><div class="value v-warn" id="s-streams">0</div><div class="sub">open SSE</div></div>
-      <div class="card"><div class="label">Avg Latency</div><div class="value v-teal" id="s-latency">—</div><div class="sub">ms per request</div></div>
-      <div class="card"><div class="label">Input Tokens</div><div class="value v-info" id="s-itok">0</div><div class="sub">total</div></div>
-      <div class="card"><div class="label">Output Tokens</div><div class="value v-ok" id="s-otok">0</div><div class="sub">total</div></div>
-      <div class="card"><div class="label">Models</div><div class="value v-orange" id="s-models">0</div><div class="sub">distinct</div></div>
-    </div>
-
-    <!-- Logs / Models / Errors panel (main focus) -->
-    <div class="panel">
-      <div class="panel-header" style="padding:8px 10px">
-        <div class="tab-bar" style="flex:1;min-height:0">
-          <button class="tab active" onclick="switchTab('logs')">Logs</button>
-          <button class="tab" onclick="switchTab('models')">Models</button>
-          <button class="tab" onclick="switchTab('errors')">Errors</button>
+    <div class="main">
+      <!-- Stat cards -->
+      <div class="stats">
+        <div class="card">
+          <div class="label">Total Requests</div>
+          <div class="value v-accent" id="s-total">0</div>
+          <div class="sub">since startup</div>
+        </div>
+        <div class="card">
+          <div class="label">Errors</div>
+          <div class="value v-err" id="s-errors">0</div>
+          <div class="sub" id="s-err-rate">0.0%</div>
+        </div>
+        <div class="card">
+          <div class="label">Active Streams</div>
+          <div class="value v-warn" id="s-streams">0</div>
+          <div class="sub">open SSE</div>
+        </div>
+        <div class="card">
+          <div class="label">Avg Latency</div>
+          <div class="value v-teal" id="s-latency">—</div>
+          <div class="sub">ms per request</div>
+        </div>
+        <div class="card">
+          <div class="label">Input Tokens</div>
+          <div class="value v-info" id="s-itok">0</div>
+          <div class="sub">total</div>
+        </div>
+        <div class="card">
+          <div class="label">Output Tokens</div>
+          <div class="value v-ok" id="s-otok">0</div>
+          <div class="sub">total</div>
+        </div>
+        <div class="card">
+          <div class="label">Models</div>
+          <div class="value v-orange" id="s-models">0</div>
+          <div class="sub">distinct</div>
         </div>
       </div>
 
-      <!-- Logs tab -->
-      <div id="tab-logs" class="tab-content active panel-body" style="overflow-y:auto;min-height:0;flex:1">
-        <div id="log-feed"></div>
-      </div>
+      <!-- Logs / Models / Errors panel (main focus) -->
+      <div class="panel">
+        <div class="panel-header" style="padding:8px 10px">
+          <div class="tab-bar" style="flex:1;min-height:0">
+            <button class="tab active" onclick="switchTab('logs')">Logs</button>
+            <button class="tab" onclick="switchTab('models')">Models</button>
+            <button class="tab" onclick="switchTab('errors')">Errors</button>
+          </div>
+        </div>
 
-      <!-- Models tab -->
-      <div id="tab-models" class="tab-content" style="overflow-y:auto;min-height:0;flex:1">
-        <div class="model-chart" id="model-chart">
-          <div class="empty">No traffic yet…</div>
+        <!-- Logs tab -->
+        <div id="tab-logs" class="tab-content active panel-body" style="overflow-y:auto;min-height:0;flex:1">
+          <div id="log-feed"></div>
+        </div>
+
+        <!-- Models tab -->
+        <div id="tab-models" class="tab-content" style="overflow-y:auto;min-height:0;flex:1">
+          <div class="model-chart" id="model-chart">
+            <div class="empty">No traffic yet…</div>
+          </div>
+        </div>
+
+        <!-- Errors tab -->
+        <div id="tab-errors" class="tab-content panel-body" style="overflow-y:auto;min-height:0;flex:1">
+          <div id="error-list">
+            <div class="empty">No errors 🎉</div>
+          </div>
         </div>
       </div>
 
-      <!-- Errors tab -->
-      <div id="tab-errors" class="tab-content panel-body" style="overflow-y:auto;min-height:0;flex:1">
-        <div id="error-list"><div class="empty">No errors 🎉</div></div>
-      </div>
-    </div>
-
-    <!-- Live Requests sidebar (right, scrollable) -->
-    <div class="panel">
-      <div class="panel-header">
-        <div class="dot" style="background:var(--accent)"></div>
-        Live Requests
-        <span style="margin-left:auto;font-size:11px;color:var(--muted)" id="req-count">0 shown</span>
-      </div>
-      <div class="req-panel-body">
-        <table class="req-table">
-          <thead><tr>
-            <th></th><th>Time</th><th>Model</th><th>Type</th>
-            <th>Dur</th><th>Status</th>
-          </tr></thead>
-          <tbody id="req-tbody"></tbody>
-        </table>
-        <div id="req-empty" class="empty">Waiting for requests…</div>
+      <!-- Live Requests sidebar (right, scrollable) -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="dot" style="background:var(--accent)"></div>
+          Live Requests
+          <span style="margin-left:auto;font-size:11px;color:var(--muted)" id="req-count">0 shown</span>
+        </div>
+        <div class="req-panel-body">
+          <table class="req-table">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Time</th>
+                <th>Model</th>
+                <th>Type</th>
+                <th>Dur</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="req-tbody"></tbody>
+          </table>
+          <div id="req-empty" class="empty">Waiting for requests…</div>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<script>
-// ── State ───────────────────────────────────────────────────────────────
-const MAX_ROWS = 100, MAX_LOGS = 200;
-let requests = {}, reqOrder = [], errors = [], modelCounts = {};
-let stats = { total: 0, errs: 0, streams: 0, avg: 0, itok: 0, otok: 0 };
+  <script>
+    // ── State ───────────────────────────────────────────────────────────────
+    const MAX_ROWS = 100, MAX_LOGS = 200;
+    let requests = {}, reqOrder = [], errors = [], modelCounts = {};
+    let stats = { total: 0, errs: 0, streams: 0, avg: 0, itok: 0, otok: 0 };
 
-// ── Helpers ─────────────────────────────────────────────────────────────
-const $ = id => document.getElementById(id);
-const fmt = n => n >= 1e6 ? (n/1e6).toFixed(1)+'M' : n >= 1e3 ? (n/1e3).toFixed(1)+'K' : String(n);
-const fmtTs = ts => { const d = new Date(ts*1000); return d.toTimeString().slice(0,8); };
-const fmtDur = ms => ms == null ? '—' : ms < 1000 ? ms+'ms' : (ms/1000).toFixed(1)+'s';
-const escHtml = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    // ── Helpers ─────────────────────────────────────────────────────────────
+    const $ = id => document.getElementById(id);
+    const fmt = n => n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(1) + 'K' : String(n);
+    const fmtTs = ts => { const d = new Date(ts * 1000); return d.toTimeString().slice(0, 8); };
+    const fmtDur = ms => ms == null ? '—' : ms < 1000 ? ms + 'ms' : (ms / 1000).toFixed(1) + 's';
+    const escHtml = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-// ── Uptime clock ────────────────────────────────────────────────────────
-let startTs = Date.now();
-setInterval(() => {
-  const s = Math.floor((Date.now()-startTs)/1000);
-  const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), ss=s%60;
-  $('uptime').textContent = `up ${h?h+'h ':''}${m}m ${ss}s`;
-}, 1000);
+    // ── Uptime clock ────────────────────────────────────────────────────────
+    let startTs = Date.now();
+    setInterval(() => {
+      const s = Math.floor((Date.now() - startTs) / 1000);
+      const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60;
+      $('uptime').textContent = `up ${h ? h + 'h ' : ''}${m}m ${ss}s`;
+    }, 1000);
 
-// ── Stats refresh ────────────────────────────────────────────────────────
-async function refreshStats() {
-  try {
-    const r = await fetch('/api/stats');
-    const d = await r.json();
-    startTs = Date.now() - d.uptime_seconds * 1000;
-    $('s-total').textContent   = fmt(d.total_requests);
-    $('s-errors').textContent  = fmt(d.total_errors);
-    const rate = d.total_requests ? ((d.total_errors/d.total_requests)*100).toFixed(1) : '0.0';
-    $('s-err-rate').textContent = rate + '% error rate';
-    $('s-streams').textContent  = d.active_streams;
-    $('s-latency').textContent  = d.avg_duration_ms ? d.avg_duration_ms : '—';
-    $('s-itok').textContent     = fmt(d.total_input_tokens);
-    $('s-otok').textContent     = fmt(d.total_output_tokens);
-    modelCounts = d.model_counts || {};
-    $('s-models').textContent   = Object.keys(modelCounts).length;
-    renderModels();
-  } catch(e) {}
-}
-setInterval(refreshStats, 5000);
-refreshStats();
+    // ── Stats refresh ────────────────────────────────────────────────────────
+    async function refreshStats() {
+      try {
+        const r = await fetch('/api/stats');
+        const d = await r.json();
+        startTs = Date.now() - d.uptime_seconds * 1000;
+        $('s-total').textContent = fmt(d.total_requests);
+        $('s-errors').textContent = fmt(d.total_errors);
+        const rate = d.total_requests ? ((d.total_errors / d.total_requests) * 100).toFixed(1) : '0.0';
+        $('s-err-rate').textContent = rate + '% error rate';
+        $('s-streams').textContent = d.active_streams;
+        $('s-latency').textContent = d.avg_duration_ms ? d.avg_duration_ms : '—';
+        $('s-itok').textContent = fmt(d.total_input_tokens);
+        $('s-otok').textContent = fmt(d.total_output_tokens);
+        modelCounts = d.model_counts || {};
+        $('s-models').textContent = Object.keys(modelCounts).length;
+        renderModels();
+      } catch (e) { }
+    }
+    setInterval(refreshStats, 5000);
+    refreshStats();
 
-// ── Model chart ──────────────────────────────────────────────────────────
-function renderModels() {
-  const el = $('model-chart');
-  const entries = Object.entries(modelCounts).sort((a,b)=>b[1]-a[1]);
-  if (!entries.length) { el.innerHTML = '<div class="empty">No traffic yet…</div>'; return; }
-  const max = entries[0][1];
-  el.innerHTML = entries.map(([name, cnt]) => `
+    // ── Model chart ──────────────────────────────────────────────────────────
+    function renderModels() {
+      const el = $('model-chart');
+      const entries = Object.entries(modelCounts).sort((a, b) => b[1] - a[1]);
+      if (!entries.length) { el.innerHTML = '<div class="empty">No traffic yet…</div>'; return; }
+      const max = entries[0][1];
+      el.innerHTML = entries.map(([name, cnt]) => `
     <div class="model-bar-row">
       <div class="model-name" title="${escHtml(name)}">${escHtml(name.split('/').pop())}</div>
-      <div class="model-bar-bg"><div class="model-bar-fill" style="width:${(cnt/max*100).toFixed(0)}%"></div></div>
+      <div class="model-bar-bg"><div class="model-bar-fill" style="width:${(cnt / max * 100).toFixed(0)}%"></div></div>
       <div class="model-count">${cnt}</div>
     </div>`).join('');
-}
+    }
 
-// ── Request rows ─────────────────────────────────────────────────────────
-function upsertRequest(r) {
-  const isNew = !requests[r.req_id];
-  requests[r.req_id] = r;
-  if (isNew) reqOrder.unshift(r.req_id);
-  if (reqOrder.length > MAX_ROWS) { const old = reqOrder.pop(); delete requests[old]; }
-  if (r.status === 'error' && r.error_code) {
-    errors.unshift(r);
-    if (errors.length > 100) errors.pop();
-    renderErrors();
-  }
-  renderRequests();
-}
+    // ── Request rows ─────────────────────────────────────────────────────────
+    function upsertRequest(r) {
+      const isNew = !requests[r.req_id];
+      requests[r.req_id] = r;
+      if (isNew) reqOrder.unshift(r.req_id);
+      if (reqOrder.length > MAX_ROWS) { const old = reqOrder.pop(); delete requests[old]; }
+      if (r.status === 'error' && r.error_code) {
+        errors.unshift(r);
+        if (errors.length > 100) errors.pop();
+        renderErrors();
+      }
+      renderRequests();
+    }
 
-function renderRequests() {
-  const tbody = $('req-tbody');
-  $('req-count').textContent = reqOrder.length + ' shown';
-  $('req-empty').style.display = reqOrder.length ? 'none' : 'block';
-  const html = reqOrder.map(id => {
-    const r = requests[id];
-    if (!r) return '';
-    const stClass = r.status === 'ok' ? 'st-ok' : r.status === 'error' ? 'st-err' : 'st-pend';
-    const modelShort = escHtml((r.model||'').split('/').pop());
-    return `<tr class="new-row">
+    function renderRequests() {
+      const tbody = $('req-tbody');
+      $('req-count').textContent = reqOrder.length + ' shown';
+      $('req-empty').style.display = reqOrder.length ? 'none' : 'block';
+      const html = reqOrder.map(id => {
+        const r = requests[id];
+        if (!r) return '';
+        const stClass = r.status === 'ok' ? 'st-ok' : r.status === 'error' ? 'st-err' : 'st-pend';
+        const modelShort = escHtml((r.model || '').split('/').pop());
+        return `<tr class="new-row">
       <td><span class="st ${stClass}"></span></td>
       <td style="color:var(--muted);font-family:var(--mono);font-size:11px">${fmtTs(r.ts)}</td>
       <td><span class="model-tag" title="${escHtml(r.model)}">${modelShort}</span></td>
-      <td style="color:var(--muted);font-size:11px">${r.stream?'sse':'sync'}</td>
+      <td style="color:var(--muted);font-size:11px">${r.stream ? 'sse' : 'sync'}</td>
       <td class="dur">${fmtDur(r.duration_ms)}</td>
       <td>${r.error_code ? `<span style="color:var(--err);font-size:11px">${escHtml(r.error_code)}</span>` : `<span style="color:var(--ok);font-size:11px">ok</span>`}</td>
     </tr>`;
-  }).join('');
-  tbody.innerHTML = html;
-}
+      }).join('');
+      tbody.innerHTML = html;
+    }
 
-function renderErrors() {
-  const el = $('error-list');
-  if (!errors.length) { el.innerHTML = '<div class="empty">No errors 🎉</div>'; return; }
-  el.innerHTML = errors.map(r => `
+    function renderErrors() {
+      const el = $('error-list');
+      if (!errors.length) { el.innerHTML = '<div class="empty">No errors 🎉</div>'; return; }
+      el.innerHTML = errors.map(r => `
     <div class="error-item">
-      <div class="error-code">${escHtml(r.error_code||'unknown')}</div>
+      <div class="error-code">${escHtml(r.error_code || 'unknown')}</div>
       <div class="error-model">${escHtml(r.model)}</div>
       <div class="error-time">${fmtTs(r.ts)}</div>
     </div>`).join('');
-}
+    }
 
-// ── Log feed ──────────────────────────────────────────────────────────────
-const logFeed = $('log-feed');
-let logCount = 0;
-function addLog(entry) {
-  const div = document.createElement('div');
-  div.className = 'log-entry';
-  const ts = fmtTs(entry.ts);
-  const lvl = entry.level || 'INFO';
-  let msg = escHtml(entry.message || '');
-  // Highlight req_id
-  msg = msg.replace(/\[req_\d+\]/g, m => `<span class="req-id">${m}</span>`);
-  div.innerHTML = `<span class="log-ts">${ts}</span><span class="log-lvl log-lvl-${lvl}">${lvl}</span><span class="log-msg">${msg}</span>`;
-  logFeed.insertBefore(div, logFeed.firstChild);
-  logCount++;
-  if (logCount > MAX_LOGS) {
-    logFeed.removeChild(logFeed.lastChild);
-    logCount--;
-  }
-}
+    // ── Log feed ──────────────────────────────────────────────────────────────
+    const logFeed = $('log-feed');
+    let logCount = 0;
+    function addLog(entry) {
+      const div = document.createElement('div');
+      div.className = 'log-entry';
+      const ts = fmtTs(entry.ts);
+      const lvl = entry.level || 'INFO';
+      let msg = escHtml(entry.message || '');
+      // Highlight req_id
+      msg = msg.replace(/\[req_\d+\]/g, m => `<span class="req-id">${m}</span>`);
+      div.innerHTML = `<span class="log-ts">${ts}</span><span class="log-lvl log-lvl-${lvl}">${lvl}</span><span class="log-msg">${msg}</span>`;
+      logFeed.insertBefore(div, logFeed.firstChild);
+      logCount++;
+      if (logCount > MAX_LOGS) {
+        logFeed.removeChild(logFeed.lastChild);
+        logCount--;
+      }
+    }
 
-// ── Tabs ──────────────────────────────────────────────────────────────────
-function switchTab(name) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  event.currentTarget.classList.add('active');
-  $('tab-'+name).classList.add('active');
-}
+    // ── Tabs ──────────────────────────────────────────────────────────────────
+    function switchTab(name) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+      $('tab-' + name).classList.add('active');
+    }
 
-// ── SSE connections ────────────────────────────────────────────────────────
-function connectSSE(url, onMsg) {
-  const es = new EventSource(url);
-  es.onmessage = e => { try { onMsg(JSON.parse(e.data)); } catch(_){} };
-  es.onerror = () => {
-    $('conn-badge').className = 'badge badge-err';
-    $('conn-badge').textContent = '● disconnected';
-    es.close();
-    setTimeout(() => connectSSE(url, onMsg), 3000);
-  };
-  es.onopen = () => {
-    $('conn-badge').className = 'badge badge-ok';
-    $('conn-badge').textContent = '● live';
-  };
-  return es;
-}
+    // ── SSE connections ────────────────────────────────────────────────────────
+    function connectSSE(url, onMsg) {
+      const es = new EventSource(url);
+      es.onmessage = e => { try { onMsg(JSON.parse(e.data)); } catch (_) { } };
+      es.onerror = () => {
+        $('conn-badge').className = 'badge badge-err';
+        $('conn-badge').textContent = '● disconnected';
+        es.close();
+        setTimeout(() => connectSSE(url, onMsg), 3000);
+      };
+      es.onopen = () => {
+        $('conn-badge').className = 'badge badge-ok';
+        $('conn-badge').textContent = '● live';
+      };
+      return es;
+    }
 
-connectSSE('/api/stream/logs',     e => addLog(e));
-connectSSE('/api/stream/requests', e => upsertRequest(e));
-</script>
+    connectSSE('/api/stream/logs', e => addLog(e));
+    connectSSE('/api/stream/requests', e => upsertRequest(e));
+  </script>
 </body>
+
 </html>
