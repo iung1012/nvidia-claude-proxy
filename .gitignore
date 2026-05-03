@@ -100,3 +100,5 @@ renders/
 narration.wav
 design.md
 index.html
+.claude/skills*
+compositions/
