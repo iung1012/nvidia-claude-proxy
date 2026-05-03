@@ -1,8 +1,38 @@
 # Nvidia Claude Code Proxy
 
-A Python port of the `claude-nvidia-proxy` Go server. It accepts requests in the **Anthropic Messages API** format and transparently translates them to the **OpenAI Chat Completions** format before forwarding to the [NVIDIA NIM](https://integrate.api.nvidia.com) (or any OpenAI-compatible) endpoint. Responses and SSE streams are translated back to the Anthropic format before being returned to the client.
+> **Use Claude Code with powerful NVIDIA-hosted models — for free.**
+> Skip the $100–$200/month Anthropic subscription. Point Claude Code at this proxy and get access to large frontier models (70B, 405B+) using NVIDIA's free NIM preview tier.
 
-This means any tool that speaks the Anthropic API (e.g. [Claude Code](https://docs.anthropic.com/en/docs/claude-code)) can be pointed at this proxy and use NVIDIA-hosted models transparently.
+![Nvidia Claude Code Proxy Dashboard](screenshot1.png)
+
+---
+
+## What is this?
+
+[Claude Code](https://docs.anthropic.com/en/docs/claude-code) is Anthropic's official AI coding agent — one of the most capable on the market. By default it requires an Anthropic API subscription that can cost **$100–$200+ per month** for heavy usage.
+
+**This proxy changes that.** It sits between Claude Code and the internet, translating Anthropic API calls into OpenAI-compatible requests and forwarding them to [NVIDIA NIM](https://integrate.api.nvidia.com) — which offers a **free preview tier** with access to large open-weight models (Llama 3.1 405B, Mistral, GLM, and more).
+
+```
+Claude Code / VS Code Extension
+         │  Anthropic API format
+         ▼
+  ┌─────────────────────┐
+  │  nvidia-claude-proxy │  ← this repo (runs locally on port 8089)
+  └─────────────────────┘
+         │  OpenAI API format
+         ▼
+   NVIDIA NIM API (free tier)
+```
+
+### Why use this?
+
+| Without this proxy | With this proxy |
+|---|---|
+| Pay $100–$200/month for Claude API | **Free** NVIDIA NIM preview models |
+| Limited to Anthropic's model lineup | Access to 70B–405B+ open-weight models |
+| Single provider dependency | Any OpenAI-compatible backend |
+| No request visibility | Real-time dashboard with logs & analytics |
 
 ---
 
