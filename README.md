@@ -3,7 +3,7 @@
 > **Use Claude Code with powerful NVIDIA-hosted models — for free.**
 > Skip the $100–$200/month Anthropic subscription. Point Claude Code at this proxy and get access to large frontier models (70B, 405B+) using NVIDIA's free NIM preview tier.
 
-![Nvidia Claude Code Proxy Dashboard](screenshot1.png)
+![Nvidia Claude Code Proxy Dashboard](dashboard.png)
 
 ---
 
