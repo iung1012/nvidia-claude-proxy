@@ -171,18 +171,86 @@ curl http://127.0.0.1:8089/v1/messages \
 
 ## Pointing Claude Code at the Proxy
 
-Set the `ANTHROPIC_BASE_URL` environment variable before running Claude Code:
+There are two ways to configure Claude Code to use this proxy — choose whichever fits your workflow.
+
+---
+
+### Option A — Per-Project `.claude/settings.json` *(recommended)*
+
+This is the cleanest approach and works for both the **Claude Code CLI** and the **Claude Code VS Code extension**. Each project that should use the proxy gets its own `.claude/` folder.
+
+#### 1. Copy the template into your project
+
+```bash
+# From your target project root
+cp -r /path/to/nvidia-claude-proxy/.claude .claude
+```
+
+Or manually create `.claude/settings.json` in your project with the following content
+(a ready-to-copy template is also shipped in this repo at `.claude/settings.json`):
+
+```json
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "http://localhost:8089",
+    "ANTHROPIC_API_KEY": "YOUR_NVIDIA_API_KEY_HERE",
+    "ANTHROPIC_AUTH_TOKEN": "YOUR_NVIDIA_API_KEY_HERE",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "YOUR_MODEL_HERE",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "YOUR_MODEL_HERE",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "YOUR_MODEL_HERE"
+  },
+  "model": "YOUR_MODEL_HERE"
+}
+```
+
+Replace every `YOUR_*` placeholder with your real values, e.g.:
+
+| Placeholder | Example value |
+|---|---|
+| `YOUR_NVIDIA_API_KEY_HERE` | `nvapi-xxxxxxxxxxxxxxxxxxxx` |
+| `YOUR_MODEL_HERE` | `z-ai/glm4.7` |
+
+#### 2. Add `.claude/settings.local.json` to your `.gitignore`
+
+`settings.json` is safe to commit (it contains no real secrets when you use the template).  
+`settings.local.json` **must never be committed** — add it to your project's `.gitignore`:
+
+```gitignore
+# Claude Code local overrides — contains real API keys
+.claude/settings.local.json
+```
+
+#### 3. Start the proxy, then open Claude Code
+
+```bash
+# Terminal 1 — run the proxy
+cd /path/to/nvidia-claude-proxy
+python main.py
+
+# Terminal 2 — use Claude Code CLI in your project
+cd /path/to/your-project
+claude
+```
+
+Or simply open your project in VS Code — the Claude Code extension automatically reads `.claude/settings.json` from the workspace root.
+
+> **Tip:** You only need to run the proxy once per machine session. Any number of projects can point at it simultaneously.
+
+---
+
+### Option B — Environment variable (quick / temporary)
+
+If you just want to test the proxy without modifying any project:
 
 ```bash
 # Windows (PowerShell)
 $env:ANTHROPIC_BASE_URL = "http://127.0.0.1:8089"
+$env:ANTHROPIC_API_KEY  = "nvapi-your-key"
 claude
 
 # Linux / macOS
-ANTHROPIC_BASE_URL=http://127.0.0.1:8089 claude
+ANTHROPIC_BASE_URL=http://127.0.0.1:8089 ANTHROPIC_API_KEY=nvapi-your-key claude
 ```
-
-Then select any NVIDIA-hosted model using `--model` or the `/model` command inside Claude Code.
 
 ---
 

@@ -1,4 +1,11 @@
 # =============================================================================
+# Claude Code — .claude folder
+# settings.json is the redacted TEMPLATE (committed / shipped with the repo)
+# settings.local.json holds real secrets and is NEVER committed
+# =============================================================================
+.claude/settings.local.json
+
+# =============================================================================
 # Python
 # =============================================================================
 __pycache__/
