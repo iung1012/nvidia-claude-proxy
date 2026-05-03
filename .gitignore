@@ -91,3 +91,12 @@ Desktop.ini
 *.bak
 *.tmp
 *.orig
+
+# =============================================================================
+# Media / Assets / Generated
+# =============================================================================
+renders/
+.waveform-cache/
+narration.wav
+design.md
+index.html
