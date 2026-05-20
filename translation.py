@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 import json
 import time
+from pathlib import Path
 from typing import Any, Dict, Generator, List, Optional
 
 from models import (
@@ -18,6 +19,38 @@ from models import (
     OpenAIChatCompletionResponse,
 )
 
+
+# ---------------------------------------------------------------------------
+# Model mapping
+# ---------------------------------------------------------------------------
+
+_MODEL_MAP: Dict[str, str] = {}
+
+def _load_model_map() -> Dict[str, str]:
+    global _MODEL_MAP
+    if _MODEL_MAP:
+        return _MODEL_MAP
+
+    model_map_path = Path(__file__).parent / "model-map.json"
+    if model_map_path.exists():
+        try:
+            with open(model_map_path) as f:
+                _MODEL_MAP = json.load(f)
+        except Exception:
+            _MODEL_MAP = {}
+    return _MODEL_MAP
+
+def _map_model(model: str) -> str:
+    mapping = _load_model_map()
+    return mapping.get(model, model)
+
+def _reverse_map_model(actual_model: str) -> str:
+    """Reverse-map the actual model back to the requested model name."""
+    mapping = _load_model_map()
+    for requested, actual in mapping.items():
+        if actual == actual_model:
+            return requested
+    return actual_model
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -154,6 +187,7 @@ def _assistant_blocks_to_openai_message(blocks: List[AnthropicContentBlock]) -> 
 
 
 def convert_anthropic_to_openai(req: AnthropicMessageRequest) -> OpenAIChatCompletionRequest:
+    """Convert Anthropic request to OpenAI format, mapping the model."""
     messages: List[Any] = []
 
     sys_text = _extract_system_text(req.system).strip()
@@ -206,7 +240,7 @@ def convert_anthropic_to_openai(req: AnthropicMessageRequest) -> OpenAIChatCompl
         tool_choice = _convert_tool_choice(req.tool_choice)
 
     return OpenAIChatCompletionRequest(
-        model=req.model,
+        model=_map_model(req.model),
         messages=messages,
         max_tokens=req.max_tokens,
         temperature=req.temperature,
@@ -221,7 +255,7 @@ def convert_anthropic_to_openai(req: AnthropicMessageRequest) -> OpenAIChatCompl
 # ---------------------------------------------------------------------------
 
 
-def convert_openai_to_anthropic(resp: OpenAIChatCompletionResponse) -> AnthropicMessageResponse:
+def convert_openai_to_anthropic(resp: OpenAIChatCompletionResponse, original_model: str = "") -> AnthropicMessageResponse:
     content: List[Any] = []
     finish_reason: Optional[str] = None
 
@@ -259,11 +293,14 @@ def convert_openai_to_anthropic(resp: OpenAIChatCompletionResponse) -> Anthropic
         input_tokens = u.prompt_tokens - cache_read
         output_tokens = u.completion_tokens
 
+    # Use original model name if provided (mask the response)
+    response_model = original_model if original_model else (resp.model or "")
+
     return AnthropicMessageResponse(
         id=resp.id or f"msg_{int(time.time() * 1000)}",
         type="message",
         role="assistant",
-        model=resp.model or "",
+        model=response_model,
         content=content,
         stop_reason=_map_finish_reason(finish_reason),
         stop_sequence=None,

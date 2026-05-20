@@ -284,8 +284,8 @@ async def messages(request: Request) -> Response:
     await _log_forward(req_id, anthropic_req, openai_req)
 
     if anthropic_req.stream:
-        return await _handle_stream(req_id, t_start, openai_req)
-    return await _handle_non_stream(req_id, t_start, openai_req)
+        return await _handle_stream(req_id, t_start, openai_req, anthropic_req.model)
+    return await _handle_non_stream(req_id, t_start, openai_req, anthropic_req.model)
 
 
 # ---------------------------------------------------------------------------
@@ -294,7 +294,7 @@ async def messages(request: Request) -> Response:
 
 
 async def _handle_non_stream(
-    req_id: str, t_start: float, openai_req: OpenAIChatCompletionRequest
+    req_id: str, t_start: float, openai_req: OpenAIChatCompletionRequest, original_model: str = ""
 ) -> Response:
     headers = {
         "Content-Type": "application/json",
@@ -330,7 +330,7 @@ async def _handle_non_stream(
                                    duration_ms=duration_ms)
         return _json_error(502, "invalid_upstream_json")
 
-    anthropic_resp: AnthropicMessageResponse = convert_openai_to_anthropic(openai_resp)
+    anthropic_resp: AnthropicMessageResponse = convert_openai_to_anthropic(openai_resp, original_model)
     input_tok = anthropic_resp.usage.input_tokens
     output_tok = anthropic_resp.usage.output_tokens
     text_chars = sum(len(b.get("text", "")) for b in anthropic_resp.content if isinstance(b, dict) and b.get("type") == "text")
@@ -352,7 +352,7 @@ async def _handle_non_stream(
 
 
 async def _handle_stream(
-    req_id: str, t_start: float, openai_req: OpenAIChatCompletionRequest
+    req_id: str, t_start: float, openai_req: OpenAIChatCompletionRequest, original_model: str = ""
 ) -> StreamingResponse:
     openai_req.stream = True
     headers = {
@@ -402,11 +402,12 @@ async def _handle_stream(
                         return
 
                     message_id = f"msg_{int(time.time() * 1000)}"
+                    response_model = original_model if original_model else openai_req.model
                     payload = json.dumps({
                         "type": "message_start",
                         "message": {
                             "id": message_id, "type": "message", "role": "assistant",
-                            "model": openai_req.model, "content": [], "stop_reason": None,
+                            "model": response_model, "content": [], "stop_reason": None,
                             "stop_sequence": None, "usage": {"input_tokens": 0, "output_tokens": 0},
                         },
                     })

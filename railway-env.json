@@ -1,0 +1,10 @@
+{
+  "ADDR": "0.0.0.0:8089",
+  "UPSTREAM_URL": "https://integrate.api.nvidia.com/v1/chat/completions",
+  "PROVIDER_API_KEY": "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",
+  "SERVER_API_KEY": "",
+  "UPSTREAM_TIMEOUT_SECONDS": "300",
+  "LOG_BODY_MAX_CHARS": "4096",
+  "LOG_STREAM_TEXT_PREVIEW_CHARS": "256",
+  "PORT": "8089"
+}
