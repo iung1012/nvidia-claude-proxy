@@ -561,6 +561,77 @@
         grid-row: 3;
       }
     }
+
+    /* Auth Modal */
+    .auth-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .auth-modal.hidden {
+      display: none;
+    }
+
+    .auth-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 40px;
+      width: 100%;
+      max-width: 360px;
+    }
+
+    .auth-input {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+
+    .auth-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .auth-button {
+      width: 100%;
+      padding: 10px;
+      background: linear-gradient(135deg, var(--accent), #6d5ce7);
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .auth-button:hover {
+      opacity: 0.9;
+    }
+
+    .auth-error {
+      color: var(--err);
+      font-size: 12px;
+      margin-bottom: 12px;
+      display: none;
+    }
+
+    .auth-error.show {
+      display: block;
+    }
   </style>
 </head>
 
@@ -822,7 +893,55 @@
 
     connectSSE('/api/stream/logs', e => addLog(e));
     connectSSE('/api/stream/requests', e => upsertRequest(e));
+
+    // Auth Modal
+    function checkAuth() {
+      const token = localStorage.getItem('proxyToken');
+      const modal = document.getElementById('authModal');
+      if (token) {
+        modal.classList.add('hidden');
+      } else {
+        modal.classList.remove('hidden');
+        document.querySelector('.layout').style.display = 'none';
+      }
+    }
+
+    function handleAuthLogin(e) {
+      e.preventDefault();
+      const key = document.getElementById('authKey').value;
+      const error = document.getElementById('authError');
+      error.classList.remove('show');
+
+      fetch('/api/health', {
+        headers: key ? { 'Authorization': `Bearer ${key}` } : {}
+      }).then(r => {
+        if (r.ok) {
+          localStorage.setItem('proxyToken', key || 'guest');
+          checkAuth();
+          document.querySelector('.layout').style.display = 'grid';
+        } else {
+          error.textContent = 'Invalid key';
+          error.classList.add('show');
+        }
+      }).catch(() => {
+        error.textContent = 'Error connecting';
+        error.classList.add('show');
+      });
+    }
+
+    checkAuth();
   </script>
+
+  <!-- Auth Modal -->
+  <div id="authModal" class="auth-modal">
+    <div class="auth-box">
+      <form onsubmit="handleAuthLogin(event)">
+        <input type="password" id="authKey" class="auth-input" placeholder="API Key" autocomplete="off">
+        <div id="authError" class="auth-error"></div>
+        <button type="submit" class="auth-button">Login</button>
+      </form>
+    </div>
+  </div>
 </body>
 
 </html>
