@@ -232,31 +232,19 @@
   <!-- Login Screen -->
   <div id="loginScreen" class="login-container">
     <div class="login-box">
-      <div class="login-logo">🔐 Proxy Dashboard</div>
-      <div class="login-subtitle">NVIDIA Claude Proxy Authentication</div>
-
       <form id="loginForm" onsubmit="handleLogin(event)">
         <div class="form-group">
-          <label class="form-label">API Key</label>
           <input
             type="password"
             id="apiKeyInput"
             class="form-input"
-            placeholder="Paste your SERVER_API_KEY here"
+            placeholder="API Key"
             autocomplete="off"
-            required
           >
           <div id="loginError" class="form-error"></div>
         </div>
-        <button type="submit" class="form-button">Sign In</button>
+        <button type="submit" class="form-button">Login</button>
       </form>
-
-      <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border);">
-        <div class="info-title">ℹ️ No Key?</div>
-        <div class="info-text">
-          If authentication is not enabled, leave the key field empty and click "Sign In".
-        </div>
-      </div>
     </div>
   </div>
 
