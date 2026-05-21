@@ -72,6 +72,20 @@ app = FastAPI(title="claude-nvidia-proxy-python", docs_url=None, redoc_url=None)
 
 DASHBOARD_HTML = Path(__file__).parent / "dashboard.html"
 
+# Load model mappings
+def _load_models() -> dict[str, str]:
+    """Load model mappings from model-map.json"""
+    try:
+        model_map_path = Path(__file__).parent / "model-map.json"
+        if model_map_path.exists():
+            with open(model_map_path) as f:
+                return json.load(f)
+    except Exception as e:
+        logger.warning("Failed to load model-map.json: %s", e)
+    return {}
+
+MODELS = _load_models()
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -233,6 +247,32 @@ async def stream_requests(request: Request) -> StreamingResponse:
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
     )
+
+
+# ---------------------------------------------------------------------------
+# Models endpoint
+# ---------------------------------------------------------------------------
+
+
+@app.get("/v1/models")
+async def list_models() -> JSONResponse:
+    """List available models in OpenAI format"""
+    models_list = []
+    for model_name in MODELS.keys():
+        models_list.append({
+            "id": model_name,
+            "object": "model",
+            "owned_by": "nvidia-proxy",
+            "permission": []
+        })
+
+    # Sort by model name for consistent output
+    models_list.sort(key=lambda m: m["id"])
+
+    return JSONResponse({
+        "object": "list",
+        "data": models_list
+    })
 
 
 # ---------------------------------------------------------------------------
