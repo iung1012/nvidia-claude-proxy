@@ -70,7 +70,7 @@ logger = logging.getLogger(__name__)
 cfg: ServerConfig = load_config()
 app = FastAPI(title="claude-nvidia-proxy-python", docs_url=None, redoc_url=None)
 
-DASHBOARD_HTML = Path(__file__).parent / "dashboard-auth.html"
+DASHBOARD_HTML = Path(__file__).parent / "dashboard.html"
 
 # Load model mappings
 def _load_models() -> dict[str, str]:
