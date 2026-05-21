@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NVIDIA Claude Proxy — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0b0f;
+      --surface: #111318;
+      --surface2: #181b22;
+      --border: #252a36;
+      --accent: #7c6ef7;
+      --accent2: #5eead4;
+      --ok: #22c55e;
+      --err: #ef4444;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --font: 'Inter', sans-serif;
+      --mono: 'JetBrains Mono', monospace;
+      --radius: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 14px;
+    }
+
+    /* Login Screen */
+    .login-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background: linear-gradient(135deg, #0a0b0f 0%, #1a1f2e 100%);
+    }
+
+    .login-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 48px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .login-logo {
+      font-size: 24px;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+
+    .login-subtitle {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 32px;
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    .form-label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(124, 110, 247, 0.1);
+    }
+
+    .form-button {
+      width: 100%;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, var(--accent), #6d5ce7);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 14px;
+    }
+
+    .form-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(124, 110, 247, 0.2);
+    }
+
+    .form-button:active {
+      transform: translateY(0);
+    }
+
+    .form-error {
+      color: var(--err);
+      font-size: 13px;
+      margin-top: 8px;
+      display: none;
+    }
+
+    .form-error.show {
+      display: block;
+    }
+
+    /* Dashboard */
+    .dashboard-container {
+      display: none;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .dashboard-container.show {
+      display: flex;
+    }
+
+    .navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      height: 56px;
+    }
+
+    .navbar-left {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .navbar-logo {
+      font-size: 15px;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .navbar-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logout-button {
+      padding: 6px 12px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+
+    .logout-button:hover {
+      background: var(--surface2);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .content {
+      flex: 1;
+      overflow: auto;
+      padding: 24px;
+    }
+
+    .info-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .info-title {
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: var(--accent);
+    }
+
+    .info-text {
+      color: var(--muted);
+      line-height: 1.6;
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    .endpoint {
+      display: inline-block;
+      background: var(--surface);
+      padding: 8px 12px;
+      border-radius: 6px;
+      color: var(--accent2);
+      margin: 4px 0;
+    }
+  </style>
+</head>
+<body>
+  <!-- Login Screen -->
+  <div id="loginScreen" class="login-container">
+    <div class="login-box">
+      <div class="login-logo">🔐 Proxy Dashboard</div>
+      <div class="login-subtitle">NVIDIA Claude Proxy Authentication</div>
+
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label class="form-label">API Key</label>
+          <input
+            type="password"
+            id="apiKeyInput"
+            class="form-input"
+            placeholder="Paste your SERVER_API_KEY here"
+            autocomplete="off"
+            required
+          >
+          <div id="loginError" class="form-error"></div>
+        </div>
+        <button type="submit" class="form-button">Sign In</button>
+      </form>
+
+      <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border);">
+        <div class="info-title">ℹ️ No Key?</div>
+        <div class="info-text">
+          If authentication is not enabled, leave the key field empty and click "Sign In".
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dashboard Screen -->
+  <div id="dashboardScreen" class="dashboard-container">
+    <div class="navbar">
+      <div class="navbar-left">
+        <div class="navbar-logo">🚀 NVIDIA Claude Proxy</div>
+      </div>
+      <div class="navbar-right">
+        <span style="color: var(--muted); font-size: 12px;">Authenticated</span>
+        <button class="logout-button" onclick="handleLogout()">Logout</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="info-box">
+        <div class="info-title">✓ Authentication Successful!</div>
+        <div class="info-text">
+          You are now logged into the NVIDIA Claude Proxy Dashboard.
+          <br><br>
+          <strong>Available Endpoints:</strong><br>
+          <div class="endpoint">GET /v1/models</div> - List available models<br>
+          <div class="endpoint">POST /v1/messages</div> - Send chat messages<br>
+          <div class="endpoint">GET /api/health</div> - Health check<br>
+          <div class="endpoint">GET /api/stats</div> - Statistics<br>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <div class="info-title">📝 Example Request</div>
+        <div class="info-text">
+curl -X POST "https://nvidia-claude-proxy-production.up.railway.app/v1/messages" \<br>
+&nbsp;&nbsp;-H "Content-Type: application/json" \<br>
+&nbsp;&nbsp;-H "Authorization: Bearer YOUR_API_KEY" \<br>
+&nbsp;&nbsp;-d '{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"model": "claude-haiku-4-5",<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"max_tokens": 150,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"messages": [{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"role": "user",<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"content": "Hello!"<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}]<br>
+&nbsp;&nbsp;}'
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Check if already authenticated
+    function checkAuth() {
+      const token = localStorage.getItem('proxyToken');
+      const loginScreen = document.getElementById('loginScreen');
+      const dashboardScreen = document.getElementById('dashboardScreen');
+
+      if (token) {
+        loginScreen.style.display = 'none';
+        dashboardScreen.classList.add('show');
+      } else {
+        loginScreen.style.display = 'flex';
+        dashboardScreen.classList.remove('show');
+      }
+    }
+
+    // Handle login
+    async function handleLogin(event) {
+      event.preventDefault();
+      const apiKey = document.getElementById('apiKeyInput').value;
+      const errorDiv = document.getElementById('loginError');
+      errorDiv.textContent = '';
+      errorDiv.classList.remove('show');
+
+      try {
+        // Test the API key by making a request
+        const response = await fetch('/api/health', {
+          headers: apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {}
+        });
+
+        if (response.ok) {
+          // Store the token
+          localStorage.setItem('proxyToken', apiKey);
+          checkAuth();
+        } else if (response.status === 401 && apiKey === '') {
+          // Allow empty key if auth is disabled
+          localStorage.setItem('proxyToken', 'guest');
+          checkAuth();
+        } else {
+          errorDiv.textContent = 'Invalid API key. Please try again.';
+          errorDiv.classList.add('show');
+        }
+      } catch (error) {
+        errorDiv.textContent = 'Connection error. Please check the server.';
+        errorDiv.classList.add('show');
+      }
+    }
+
+    // Handle logout
+    function handleLogout() {
+      localStorage.removeItem('proxyToken');
+      checkAuth();
+      document.getElementById('apiKeyInput').value = '';
+    }
+
+    // Initialize
+    checkAuth();
+  </script>
+</body>
+</html>
