@@ -297,7 +297,7 @@ def convert_openai_to_anthropic(resp: OpenAIChatCompletionResponse, original_mod
     response_model = original_model if original_model else (resp.model or "")
 
     return AnthropicMessageResponse(
-        id=resp.id or f"msg_{int(time.time() * 1000)}",
+        id=f"msg_{int(time.time() * 1000)}",
         type="message",
         role="assistant",
         model=response_model,
